@@ -1,0 +1,33 @@
+/* The window itself is see-through, so the panel paints the frosted glass.
+   GTK only asks the compositor for blur at backdrop-filter: blur(10px) or more. */
+.launcher-window {
+    background: transparent;
+    border-radius: 18px;
+}
+
+.glass {
+    background-color: color-mix(in srgb, var(--window-bg-color) 65%, transparent);
+    backdrop-filter: blur(24px);
+    border-radius: 18px;
+}
+
+.launcher-entry,
+.launcher-entry:focus-within {
+    min-height: 60px;
+    padding: 0 20px;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    outline: none;
+    font-size: 20px;
+}
+
+.launcher-entry image {
+    margin-right: 8px;
+    -gtk-icon-size: 20px;
+}
+
+.results {
+    background: transparent;
+    padding: 6px;
+}
