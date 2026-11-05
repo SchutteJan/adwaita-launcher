@@ -6,6 +6,8 @@
 }
 
 .glass {
+    /* Fallback for GTK < 4.16, which drops the color-mix() line and has no blur. */
+    background-color: alpha(@window_bg_color, 0.95);
     background-color: color-mix(in srgb, var(--window-bg-color) 65%, transparent);
     backdrop-filter: blur(24px);
     border-radius: 18px;
