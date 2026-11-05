@@ -7,17 +7,18 @@ use adw::prelude::*;
 use pop_launcher::{IconSource, SearchResult};
 
 pub fn result_row(item: &SearchResult) -> adw::ActionRow {
-    // Results contain arbitrary text, such as file names, so it must not be parsed as markup.
     let row = adw::ActionRow::builder()
-        .title(item.name.as_str())
-        .subtitle(item.description.as_str())
-        .use_markup(false)
         .title_lines(1)
         .subtitle_lines(1)
         .activatable(true)
         // Keyboard focus stays in the search box, which drives the selection.
         .focusable(false)
         .build();
+    // Results contain arbitrary text, such as file names, so it must not be parsed as markup.
+    // This only works after construction: passed to the builder, the labels still parse the text.
+    row.set_use_markup(false);
+    row.set_title(&item.name);
+    row.set_subtitle(&item.description);
 
     if let Some(icon) = &item.icon {
         let image = icon_image(icon);
