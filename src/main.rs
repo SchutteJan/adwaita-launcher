@@ -17,9 +17,15 @@ const CSS: &str = include_str!("style.css");
 const EXIT_AFTER_FIRST_FRAME: &str = "exit-after-first-frame";
 
 fn main() {
+    // Changing the icon theme's resource paths after it has loaded discards it, and reloading
+    // a large theme is the slowest part of startup. These two lines keep it to a single load:
+    // libadwaita adds its path before the load, and GTK has no app resource path to add after.
+    adw::init().expect("failed to initialize libadwaita");
+
     let application = adw::Application::builder()
         .application_id("io.github.schuttejan.AdwaitaLauncher")
         .build();
+    application.set_resource_base_path(None);
 
     // Registered so GApplication accepts the flag and lists it in --help.
     application.add_main_option(
