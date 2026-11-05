@@ -17,6 +17,12 @@ const CSS: &str = include_str!("style.css");
 const EXIT_AFTER_FIRST_FRAME: &str = "exit-after-first-frame";
 
 fn main() {
+    // Handled before GTK starts, so it works without a display.
+    if std::env::args().any(|arg| arg == "--version") {
+        println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+        return;
+    }
+
     // Changing the icon theme's resource paths after it has loaded discards it, and reloading
     // a large theme is the slowest part of startup. These two lines keep it to a single load:
     // libadwaita adds its path before the load, and GTK has no app resource path to add after.
@@ -27,7 +33,15 @@ fn main() {
         .build();
     application.set_resource_base_path(None);
 
-    // Registered so GApplication accepts the flag and lists it in --help.
+    // Registered so GApplication accepts the flags and lists them in --help.
+    application.add_main_option(
+        "version",
+        glib::Char::from(0),
+        glib::OptionFlags::NONE,
+        glib::OptionArg::None,
+        "Print the version and exit",
+        None,
+    );
     application.add_main_option(
         EXIT_AFTER_FIRST_FRAME,
         glib::Char::from(0),
