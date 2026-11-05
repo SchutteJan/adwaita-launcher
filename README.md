@@ -3,7 +3,7 @@
   <img src="resources/screenshot-fire.webp" alt="Adwaita Launcher showing search results for &quot;fire&quot; in light and dark styles">
 </div>
 
-An application launcher for Linux, build with libadwaita, a frontend for [pop-launcher](https://github.com/pop-os/launcher). Similar to `cosmic-launcher` for the Cosmic Desktop environment.
+An application launcher for Linux, built with libadwaita, a frontend for [pop-launcher](https://github.com/pop-os/launcher). Similar to `cosmic-launcher` for the Cosmic Desktop environment.
 
 ## Building
 
