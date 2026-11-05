@@ -5,8 +5,8 @@ mod service;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use adw::gtk;
 use adw::prelude::*;
+use adw::{glib, gtk};
 
 use launcher::Launcher;
 use pop_launcher::Request;
@@ -14,13 +14,27 @@ use service::Service;
 
 const CSS: &str = include_str!("style.css");
 
+const EXIT_AFTER_FIRST_FRAME: &str = "exit-after-first-frame";
+
 fn main() {
     let application = adw::Application::builder()
         .application_id("io.github.schuttejan.AdwaitaLauncher")
         .build();
 
+    // Registered so GApplication accepts the flag and lists it in --help.
+    application.add_main_option(
+        EXIT_AFTER_FIRST_FRAME,
+        glib::Char::from(0),
+        glib::OptionFlags::NONE,
+        glib::OptionArg::None,
+        "Quit once the first frame is painted, to benchmark startup time",
+        None,
+    );
+    let exit_after_first_frame =
+        std::env::args().any(|arg| arg == format!("--{EXIT_AFTER_FIRST_FRAME}"));
+
     application.connect_startup(|_| load_css());
-    application.connect_activate(build_ui);
+    application.connect_activate(move |app| build_ui(app, exit_after_first_frame));
     application.run();
 }
 
@@ -34,7 +48,7 @@ fn load_css() {
     );
 }
 
-fn build_ui(app: &adw::Application) {
+fn build_ui(app: &adw::Application, exit_after_first_frame: bool) {
     // add_css_class keeps GTK's default classes, which the css_classes builder method replaces.
     let entry = gtk::SearchEntry::builder()
         .placeholder_text("Search")
@@ -84,4 +98,12 @@ fn build_ui(app: &adw::Application) {
 
     window.present();
     entry.grab_focus();
+
+    if exit_after_first_frame {
+        let app = app.clone();
+        window
+            .frame_clock()
+            .expect("a presented window is realized")
+            .connect_after_paint(move |_| app.quit());
+    }
 }
