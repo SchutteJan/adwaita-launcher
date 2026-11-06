@@ -1,4 +1,5 @@
 mod launcher;
+mod preferences;
 mod row;
 mod service;
 
@@ -85,13 +86,29 @@ fn build_ui(app: &adw::Application, exit_after_first_frame: bool) {
         .vexpand(true)
         .build();
 
+    let preferences_button = gtk::Button::builder()
+        .icon_name("preferences-system-symbolic")
+        .tooltip_text("Preferences")
+        .halign(gtk::Align::End)
+        .focus_on_click(false)
+        .build();
+    preferences_button.add_css_class("flat");
+    preferences_button.add_css_class("circular");
+    preferences_button.add_css_class("preferences-button");
+
     let panel = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
-        .css_classes(["glass"])
+        .css_classes(["launcher-panel", "glass"])
         .build();
     panel.append(&entry);
     panel.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
     panel.append(&scroller);
+    panel.append(&preferences_button);
+
+    preferences_button.connect_clicked({
+        let panel = panel.clone();
+        move |_| preferences::present(&panel)
+    });
 
     let window = adw::ApplicationWindow::builder()
         .application(app)

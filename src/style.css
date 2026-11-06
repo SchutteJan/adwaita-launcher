@@ -2,18 +2,19 @@
     --border-radius: 16px;
 }
 
-
-/* The window itself is see-through, so the panel paints the frosted glass.
-   GTK only asks the compositor for blur at backdrop-filter: blur(10px) or more. */
 .launcher-window {
     background: transparent;
-    border-radius: var(--border-radius);
+}
+
+.launcher-panel {
+    background-color: var(--window-bg-color);
 }
 
 .glass {
     /* Fallback for GTK < 4.16, which drops the color-mix() line and has no blur. */
     background-color: alpha(@window_bg_color, 0.95);
-    background-color: color-mix(in srgb, var(--window-bg-color) 65%, transparent);
+
+    background-color: color-mix(in srgb, var(--window-bg-color) 75%, transparent);
     backdrop-filter: blur(24px);
     border-radius: var(--border-radius);
 }
@@ -23,8 +24,7 @@
     min-height: 60px;
     padding: 0 20px;
     border-radius: 0;
-    background: transparent;
-    box-shadow: none;
+    background: unset;
     outline: none;
     font-size: 20px;
 }
@@ -35,6 +35,9 @@
 }
 
 .results {
-    background: transparent;
-    padding: 6px;
+    padding-top: 6px;
+}
+
+.preferences-button {
+    margin: 0 8px 8px;
 }
