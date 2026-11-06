@@ -1,8 +1,13 @@
+:root {
+    --border-radius: 16px;
+}
+
+
 /* The window itself is see-through, so the panel paints the frosted glass.
    GTK only asks the compositor for blur at backdrop-filter: blur(10px) or more. */
 .launcher-window {
     background: transparent;
-    border-radius: 18px;
+    border-radius: var(--border-radius);
 }
 
 .glass {
@@ -10,7 +15,7 @@
     background-color: alpha(@window_bg_color, 0.95);
     background-color: color-mix(in srgb, var(--window-bg-color) 65%, transparent);
     backdrop-filter: blur(24px);
-    border-radius: 18px;
+    border-radius: var(--border-radius);
 }
 
 .launcher-entry,
