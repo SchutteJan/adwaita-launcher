@@ -18,4 +18,23 @@ Bind `adwaita-launcher` binary to a keyboard shortcut, (full path `~/.cargo/bin/
 
 ## Blur support
 
-For the background blur to work, your Wayland compositor must support the [`ext-background-effect-v1`](https://wayland.app/protocols/ext-background-effect-v1) protocol.
+For the background blur to work, your Wayland compositor must support the [`ext-background-effect-v1`](https://wayland.app/protocols/ext-background-effect-v1) protocol. 
+
+For GNOME Shell you need version 51 or higher. 
+
+## Startup Time
+
+I've been actively optimizing the startup time of Adwaita Launcher. 
+Applications built with GTK4 load system themes and icons when starting up,
+which takes considerable time. My goal is to have the "time to first render" be below 50ms, on my machine I am currently at 108ms.
+
+Benchmark using this command:
+
+```sh
+hyperfine --warmup 1 'adwaita-launcher --exit-after-first-frame'
+```
+
+### Icon theme
+I've found a 150ms improvement simply by switching icon theme from `Papirus-Adapta-Maia` to `Adwaita`, likely because the number of icons is smaller in the latter. Note that switching will make all GTK based applications faster to start. 
+
+Change icon theme using the GNOME Tweaks utility.
