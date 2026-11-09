@@ -1,3 +1,4 @@
+mod about;
 mod launcher;
 mod preferences;
 mod row;
@@ -7,7 +8,7 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use adw::prelude::*;
-use adw::{glib, gtk};
+use adw::{gio, glib, gtk};
 
 use launcher::Launcher;
 use pop_launcher::Request;
@@ -86,15 +87,21 @@ fn build_ui(app: &adw::Application, exit_after_first_frame: bool) {
         .vexpand(true)
         .build();
 
-    let preferences_button = gtk::Button::builder()
-        .icon_name("preferences-system-symbolic")
-        .tooltip_text("Preferences")
+    let menu = gio::Menu::new();
+    menu.append(Some("Preferences"), Some("win.preferences"));
+    menu.append(Some("About"), Some("win.about"));
+
+    let menu_button = gtk::MenuButton::builder()
+        .icon_name("open-menu-symbolic")
+        .tooltip_text("Main Menu")
+        .menu_model(&menu)
+        .direction(gtk::ArrowType::Up)
         .halign(gtk::Align::End)
         .focus_on_click(false)
         .build();
-    preferences_button.add_css_class("flat");
-    preferences_button.add_css_class("circular");
-    preferences_button.add_css_class("preferences-button");
+    menu_button.add_css_class("flat");
+    menu_button.add_css_class("square");
+    menu_button.add_css_class("menu-button");
 
     let panel = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
@@ -103,12 +110,7 @@ fn build_ui(app: &adw::Application, exit_after_first_frame: bool) {
     panel.append(&entry);
     panel.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
     panel.append(&scroller);
-    panel.append(&preferences_button);
-
-    preferences_button.connect_clicked({
-        let panel = panel.clone();
-        move |_| preferences::present(&panel)
-    });
+    panel.append(&menu_button);
 
     let window = adw::ApplicationWindow::builder()
         .application(app)
@@ -118,6 +120,20 @@ fn build_ui(app: &adw::Application, exit_after_first_frame: bool) {
         .content(&panel)
         .build();
     window.add_css_class("launcher-window");
+    window.add_action_entries([
+        gio::ActionEntry::builder("preferences")
+            .activate({
+                let panel = panel.clone();
+                move |_: &adw::ApplicationWindow, _, _| preferences::present(&panel)
+            })
+            .build(),
+        gio::ActionEntry::builder("about")
+            .activate({
+                let panel = panel.clone();
+                move |_: &adw::ApplicationWindow, _, _| about::present(&panel)
+            })
+            .build(),
+    ]);
 
     let launcher = Rc::new(Launcher {
         window: window.clone(),
