@@ -1,6 +1,10 @@
 <div align="center">
   <h1>Adwaita Launcher</h1>
-  <img src="resources/screenshot-fire.webp" alt="Adwaita Launcher showing search results for &quot;fire&quot; in light and dark styles">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="resources/screenshot-dark.webp">
+    <source media="(prefers-color-scheme: light)" srcset="resources/screenshot-light.webp">
+    <img alt="Adwaita Launcher showing search results for &quot;ghostty&quot" src="resources/screenshot-dark.webp">
+  </picture>
 </div>
 
 An application launcher for Linux, built with libadwaita, a frontend for [pop-launcher](https://github.com/pop-os/launcher). Similar to `cosmic-launcher` for the Cosmic Desktop environment.
