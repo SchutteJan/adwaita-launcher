@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use adw::gio;
@@ -6,6 +7,7 @@ use adw::prelude::*;
 
 use pop_launcher::SearchResult;
 
+use crate::config::Config;
 use crate::views::results::{ROW_SHORTCUTS, ResultList};
 use crate::views::{about, preferences};
 
@@ -32,8 +34,9 @@ struct WindowWidgets {
 }
 
 impl Window {
-    pub fn new(app: &adw::Application) -> Self {
+    pub fn new(app: &adw::Application, config: Config) -> Self {
         let widgets = Window::build_ui();
+        preferences::apply(&widgets.container, &config);
         let window = adw::ApplicationWindow::builder()
             .application(app)
             .title("Launcher")
@@ -46,7 +49,8 @@ impl Window {
         let action_preferences = gio::ActionEntry::builder("preferences")
             .activate({
                 let container = widgets.container.clone();
-                move |_: &adw::ApplicationWindow, _, _| preferences::present(&container)
+                let config = Rc::new(RefCell::new(config));
+                move |_: &adw::ApplicationWindow, _, _| preferences::present(&container, &config)
             })
             .build();
 
@@ -192,7 +196,7 @@ impl Window {
 
         let container = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
-            .css_classes(["launcher-panel", "glass"])
+            .css_classes(["launcher-panel"])
             .build();
         container.append(&search_entry);
         container.append(&gtk::Separator::new(gtk::Orientation::Horizontal));

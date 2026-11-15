@@ -1,3 +1,4 @@
+mod config;
 mod launcher;
 mod search;
 mod service;
@@ -6,6 +7,7 @@ mod views;
 use adw::prelude::*;
 use adw::{glib, gtk};
 
+use config::Config;
 use launcher::Launcher;
 use service::Service;
 use views::window::Window;
@@ -66,7 +68,7 @@ fn load_css() {
 }
 
 fn activate(app: &adw::Application, exit_after_first_frame: bool) {
-    let window = Window::new(app);
+    let window = Window::new(app, Config::load());
     let service = Service::spawn().expect("failed to start pop-launcher");
     let launcher = Launcher::new(&window, service);
     app.connect_shutdown(move |_| launcher.shutdown());

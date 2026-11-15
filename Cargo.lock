@@ -9,6 +9,7 @@ dependencies = [
  "gio-unix",
  "libadwaita",
  "pop-launcher",
+ "serde",
  "serde_json",
 ]
 

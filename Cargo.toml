@@ -13,4 +13,5 @@ description = "An application launcher for GNOME, based on pop-launcher and buil
 adw = { version = "0.9.2", package = "libadwaita", features = ["v1_8"] }
 gio-unix = "0.22"
 pop-launcher = { git = "https://github.com/pop-os/launcher/", version = "1.2.7" }
+serde = { version = "1", features = ["derive"] }
 serde_json = "1"
