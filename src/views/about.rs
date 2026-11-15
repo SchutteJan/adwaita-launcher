@@ -1,7 +1,7 @@
 use adw::gtk;
 use adw::prelude::*;
 
-pub fn present(panel: &gtk::Box) {
+pub fn present(parent: &impl IsA<gtk::Widget>) {
     let dialog = adw::AboutDialog::builder()
         .application_name("Adwaita Launcher")
         .application_icon("system-search-symbolic")
@@ -13,5 +13,5 @@ pub fn present(panel: &gtk::Box) {
         .issue_url(concat!(env!("CARGO_PKG_REPOSITORY"), "/issues"))
         .license_type(gtk::License::Gpl30Only)
         .build();
-    dialog.present(Some(panel));
+    dialog.present(Some(parent));
 }

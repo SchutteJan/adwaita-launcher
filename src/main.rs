@@ -1,28 +1,23 @@
-mod about;
 mod launcher;
-mod preferences;
-mod row;
+mod search;
 mod service;
-
-use std::cell::{Cell, RefCell};
-use std::rc::Rc;
+mod views;
 
 use adw::prelude::*;
-use adw::{gio, glib, gtk};
+use adw::{glib, gtk};
 
 use launcher::Launcher;
-use pop_launcher::Request;
 use service::Service;
+use views::window::Window;
 
-const CSS: &str = include_str!("style.css");
-
+const APP_ID: &str = "io.github.schuttejan.AdwaitaLauncher";
 const EXIT_AFTER_FIRST_FRAME: &str = "exit-after-first-frame";
 
-fn main() {
+fn main() -> glib::ExitCode {
     // Handled before GTK starts, so it works without a display.
     if std::env::args().any(|arg| arg == "--version") {
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
-        return;
+        return glib::ExitCode::SUCCESS;
     }
 
     // Changing the icon theme's resource paths after it has loaded discards it, and reloading
@@ -30,9 +25,7 @@ fn main() {
     // libadwaita adds its path before the load, and GTK has no app resource path to add after.
     adw::init().expect("failed to initialize libadwaita");
 
-    let application = adw::Application::builder()
-        .application_id("io.github.schuttejan.AdwaitaLauncher")
-        .build();
+    let application = adw::Application::builder().application_id(APP_ID).build();
     application.set_resource_base_path(None);
 
     // Registered so GApplication accepts the flags and lists them in --help.
@@ -49,20 +42,22 @@ fn main() {
         glib::Char::from(0),
         glib::OptionFlags::NONE,
         glib::OptionArg::None,
-        "Quit once the first frame is painted, to benchmark startup time",
+        "Quit once the first frame is painted, for benchmarking startup time",
         None,
     );
     let exit_after_first_frame =
         std::env::args().any(|arg| arg == format!("--{EXIT_AFTER_FIRST_FRAME}"));
 
     application.connect_startup(|_| load_css());
-    application.connect_activate(move |app| build_ui(app, exit_after_first_frame));
-    application.run();
+    application.connect_activate(move |app| activate(app, exit_after_first_frame));
+
+    application.run()
 }
 
 fn load_css() {
     let provider = gtk::CssProvider::new();
-    provider.load_from_data(CSS);
+    provider.load_from_data(include_str!("style.css"));
+
     gtk::style_context_add_provider_for_display(
         &gtk::gdk::Display::default().expect("no default display"),
         &provider,
@@ -70,93 +65,16 @@ fn load_css() {
     );
 }
 
-fn build_ui(app: &adw::Application, exit_after_first_frame: bool) {
-    // add_css_class keeps GTK's default classes, which the css_classes builder method replaces.
-    let entry = gtk::SearchEntry::builder()
-        .placeholder_text("Search")
-        .build();
-    entry.add_css_class("launcher-entry");
-
-    let list = gtk::ListBox::builder()
-        .css_classes(["navigation-sidebar", "results"])
-        .build();
-
-    let scroller = gtk::ScrolledWindow::builder()
-        .child(&list)
-        .hscrollbar_policy(gtk::PolicyType::Never)
-        .vexpand(true)
-        .build();
-
-    let menu = gio::Menu::new();
-    menu.append(Some("Preferences"), Some("win.preferences"));
-    menu.append(Some("About"), Some("win.about"));
-
-    let menu_button = gtk::MenuButton::builder()
-        .icon_name("open-menu-symbolic")
-        .tooltip_text("Main Menu")
-        .menu_model(&menu)
-        .direction(gtk::ArrowType::Up)
-        .halign(gtk::Align::End)
-        .focus_on_click(false)
-        .build();
-    menu_button.add_css_class("flat");
-    menu_button.add_css_class("square");
-    menu_button.add_css_class("menu-button");
-
-    let panel = gtk::Box::builder()
-        .orientation(gtk::Orientation::Vertical)
-        .css_classes(["launcher-panel", "glass"])
-        .build();
-    panel.append(&entry);
-    panel.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
-    panel.append(&scroller);
-    panel.append(&menu_button);
-
-    let window = adw::ApplicationWindow::builder()
-        .application(app)
-        .title("Launcher")
-        .default_width(640)
-        .default_height(480)
-        .content(&panel)
-        .build();
-    window.add_css_class("launcher-window");
-    window.add_action_entries([
-        gio::ActionEntry::builder("preferences")
-            .activate({
-                let panel = panel.clone();
-                move |_: &adw::ApplicationWindow, _, _| preferences::present(&panel)
-            })
-            .build(),
-        gio::ActionEntry::builder("about")
-            .activate({
-                let panel = panel.clone();
-                move |_: &adw::ApplicationWindow, _, _| about::present(&panel)
-            })
-            .build(),
-    ]);
-
-    let launcher = Rc::new(Launcher {
-        window: window.clone(),
-        entry: entry.clone(),
-        list,
-        scroller,
-        service: Service::spawn().expect("failed to start pop-launcher"),
-        searching: Cell::new(false),
-        queued: RefCell::new(None),
-        activate_when_ready: Cell::new(false),
-        ids: RefCell::new(Vec::new()),
-    });
-    launcher.clone().connect();
-    app.connect_shutdown(move |_| launcher.service.send(&Request::Exit));
+fn activate(app: &adw::Application, exit_after_first_frame: bool) {
+    let window = Window::new(app);
+    let service = Service::spawn().expect("failed to start pop-launcher");
+    let launcher = Launcher::new(&window, service);
+    app.connect_shutdown(move |_| launcher.shutdown());
 
     window.present();
-    entry.grab_focus();
 
     if exit_after_first_frame {
         let app = app.clone();
-        window
-            .frame_clock()
-            .expect("a presented window is realized")
-            .connect_after_paint(move |_| app.quit());
+        window.connect_after_paint(move || app.quit());
     }
 }

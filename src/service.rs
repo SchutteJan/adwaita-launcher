@@ -6,6 +6,15 @@ use adw::glib;
 
 use pop_launcher::{Request, Response};
 
+/// What [`Service::listen`] reports.
+#[derive(Debug)]
+pub enum Event {
+    /// pop-launcher sent a message.
+    Response(Response),
+    /// pop-launcher exited, or reading from it failed. Nothing follows this.
+    Closed,
+}
+
 pub struct Service {
     stdin: gio::OutputStream,
     stdout: gio::InputStream,
@@ -23,14 +32,15 @@ impl Service {
         })
     }
 
-    /// Calls `on_response` on the main loop for each message from pop-launcher.
-    pub fn listen(&self, on_response: impl Fn(Response) + 'static) {
+    /// Calls `on_event` on the main loop for each message from pop-launcher, and a last time
+    /// when there won't be any more.
+    pub fn listen(&self, on_event: impl Fn(Event) + 'static) {
         let reader = gio::DataInputStream::new(&self.stdout);
         glib::spawn_future_local(async move {
             loop {
                 match reader.read_line_utf8_future(glib::Priority::DEFAULT).await {
                     Ok(Some(line)) => match serde_json::from_str(&line) {
-                        Ok(response) => on_response(response),
+                        Ok(response) => on_event(Event::Response(response)),
                         Err(_) => eprintln!("ignoring message: {line}"),
                     },
                     Ok(None) => {
@@ -43,19 +53,27 @@ impl Service {
                     }
                 }
             }
+            on_event(Event::Closed);
         });
     }
 
     pub fn send(&self, request: &Request) {
-        let mut line = serde_json::to_string(request).expect("requests always serialize");
-        line.push('\n');
-        if let Err(error) = self
+        let line = encode(request);
+        let result = self
             .stdin
-            .write_all(line.as_bytes(), gio::Cancellable::NONE)
-        {
+            .write_all(line.as_bytes(), gio::Cancellable::NONE);
+        // A write that fails partway is not an `Err`: its error comes with the byte count.
+        if let Err(error) | Ok((_, Some(error))) = result {
             eprintln!("failed to write to pop-launcher: {error}");
         }
     }
+}
+
+/// pop-launcher reads one JSON request per line.
+fn encode(request: &Request) -> String {
+    let mut line = serde_json::to_string(request).expect("requests always serialize");
+    line.push('\n');
+    line
 }
 
 #[cfg(test)]
@@ -81,5 +99,16 @@ mod tests {
             serde_json::from_str(entry),
             Ok(Response::DesktopEntry { .. })
         ));
+    }
+
+    /// The lines pop-launcher 1.2.7 accepts, for the same reason.
+    #[test]
+    fn encodes_the_requests_the_launcher_sends() {
+        assert_eq!(
+            encode(&Request::Search("fire".into())),
+            "{\"Search\":\"fire\"}\n"
+        );
+        assert_eq!(encode(&Request::Activate(3)), "{\"Activate\":3}\n");
+        assert_eq!(encode(&Request::Exit), "\"Exit\"\n");
     }
 }
