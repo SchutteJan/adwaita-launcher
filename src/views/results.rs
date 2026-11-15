@@ -11,6 +11,19 @@ const ICON_SIZE: i32 = 32;
 /// so the highlight isn't cut off at the panel edge.
 const SCROLL_MARGIN: f64 = 12.0;
 
+pub const ROW_SHORTCUTS: [&str; 10] = [
+    "<Control>1",
+    "<Control>2",
+    "<Control>3",
+    "<Control>4",
+    "<Control>5",
+    "<Control>6",
+    "<Control>7",
+    "<Control>8",
+    "<Control>9",
+    "<Control>0",
+];
+
 #[derive(Clone)]
 pub struct ResultList {
     list: gtk::ListBox,
@@ -40,8 +53,9 @@ impl ResultList {
         while let Some(row) = self.list.first_child() {
             self.list.remove(&row);
         }
-        for item in items {
-            self.list.append(&result_row(item));
+        for (index, item) in items.iter().enumerate() {
+            let shortcut = ROW_SHORTCUTS.get(index).copied();
+            self.list.append(&result_row(item, shortcut));
         }
         self.list.select_row(self.list.row_at_index(0).as_ref());
         self.scroller.vadjustment().set_value(0.0);
@@ -89,7 +103,7 @@ fn row_index(row: &gtk::ListBoxRow) -> Option<usize> {
     usize::try_from(row.index()).ok()
 }
 
-fn result_row(item: &SearchResult) -> adw::ActionRow {
+fn result_row(item: &SearchResult, shortcut: Option<&str>) -> adw::ActionRow {
     let row = adw::ActionRow::builder()
         .title_lines(1)
         .subtitle_lines(1)
@@ -111,7 +125,12 @@ fn result_row(item: &SearchResult) -> adw::ActionRow {
     if let Some(icon) = &item.category_icon {
         let image = icon_image(icon);
         image.add_css_class("dim-label");
-        row.add_suffix(&image);
+        row.add_prefix(&image);
+    }
+    if let Some(accelerator) = shortcut {
+        let label = adw::ShortcutLabel::new(accelerator);
+        label.set_valign(gtk::Align::Center);
+        row.add_suffix(&label);
     }
     row
 }

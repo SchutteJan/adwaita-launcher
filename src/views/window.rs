@@ -6,7 +6,7 @@ use adw::prelude::*;
 
 use pop_launcher::SearchResult;
 
-use crate::views::results::ResultList;
+use crate::views::results::{ROW_SHORTCUTS, ResultList};
 use crate::views::{about, preferences};
 
 #[derive(Debug)]
@@ -112,6 +112,20 @@ impl Window {
                 }
             }
         });
+        let shortcuts = gtk::ShortcutController::new();
+        for (index, accelerator) in ROW_SHORTCUTS.into_iter().enumerate() {
+            let on_event = on_event.clone();
+            let activate = gtk::CallbackAction::new(move |_, _| {
+                on_event(Event::ResultActivated(index));
+                gtk::glib::Propagation::Stop
+            });
+            shortcuts.add_shortcut(gtk::Shortcut::new(
+                gtk::ShortcutTrigger::parse_string(accelerator),
+                Some(activate),
+            ));
+        }
+        search_entry.add_controller(shortcuts);
+
         results.connect_activated(move |index| on_event(Event::ResultActivated(index)));
     }
 
