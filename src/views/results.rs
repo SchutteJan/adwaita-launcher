@@ -111,8 +111,8 @@ fn result_row(item: &SearchResult, shortcut: Option<&str>) -> adw::ActionRow {
         // Keyboard focus stays in the search box, which drives the selection.
         .focusable(false)
         .build();
+
     // Results contain arbitrary text, such as file names, so it must not be parsed as markup.
-    // This only works after construction: passed to the builder, the labels still parse the text.
     row.set_use_markup(false);
     row.set_title(&item.name);
     row.set_subtitle(&item.description);
@@ -125,6 +125,7 @@ fn result_row(item: &SearchResult, shortcut: Option<&str>) -> adw::ActionRow {
     if let Some(icon) = &item.category_icon {
         let image = icon_image(icon);
         image.add_css_class("dim-label");
+        image.set_margin_end(6);
         row.add_prefix(&image);
     }
     if let Some(accelerator) = shortcut {
