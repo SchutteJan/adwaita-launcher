@@ -188,11 +188,11 @@ impl Window {
             .direction(gtk::ArrowType::Up)
             .halign(gtk::Align::End)
             .focus_on_click(false)
+            .margin_start(8)
+            .margin_end(8)
+            .margin_bottom(8)
+            .css_classes(["flat", "square"])
             .build();
-
-        menu_button.add_css_class("flat");
-        menu_button.add_css_class("square");
-        menu_button.add_css_class("menu-button");
 
         let container = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)

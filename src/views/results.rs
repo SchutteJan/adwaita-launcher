@@ -124,7 +124,7 @@ fn result_row(item: &SearchResult, shortcut: Option<&str>) -> adw::ActionRow {
     }
     if let Some(icon) = &item.category_icon {
         let image = icon_image(icon);
-        image.add_css_class("dim-label");
+        image.add_css_class("dimmed");
         image.set_margin_end(6);
         row.add_prefix(&image);
     }
