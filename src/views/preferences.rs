@@ -4,7 +4,7 @@ use std::rc::Rc;
 use adw::gtk;
 use adw::prelude::*;
 
-use crate::config::Config;
+use crate::config::{Config, Theme};
 
 pub fn apply(panel: &impl IsA<gtk::Widget>, config: &Config) {
     if config.frosted_glass {
@@ -12,6 +12,11 @@ pub fn apply(panel: &impl IsA<gtk::Widget>, config: &Config) {
     } else {
         panel.remove_css_class("glass");
     }
+    adw::StyleManager::default().set_color_scheme(match config.theme {
+        Theme::System => adw::ColorScheme::Default,
+        Theme::Light => adw::ColorScheme::ForceLight,
+        Theme::Dark => adw::ColorScheme::ForceDark,
+    });
 }
 
 /// Builds and opens the preferences dialog.
@@ -33,7 +38,34 @@ pub fn present(parent: &impl IsA<gtk::Widget>, config: &Rc<RefCell<Config>>) {
         }
     });
 
+    let labels: Vec<&str> = Theme::ALL.iter().map(|theme| theme.label()).collect();
+    let theme = adw::ComboRow::builder()
+        .title("Theme")
+        .model(&gtk::StringList::new(&labels))
+        .selected(
+            Theme::ALL
+                .iter()
+                .position(|theme| *theme == config.borrow().theme)
+                .unwrap_or(0) as u32,
+        )
+        .build();
+
+    theme.connect_selected_notify({
+        let panel = parent.clone();
+        let config = config.clone();
+        move |row| {
+            let Some(selected) = Theme::ALL.get(row.selected() as usize) else {
+                return;
+            };
+            let mut config = config.borrow_mut();
+            config.theme = *selected;
+            config.save();
+            apply(&panel, &config);
+        }
+    });
+
     let group = adw::PreferencesGroup::builder().title("Appearance").build();
+    group.add(&theme);
     group.add(&frosted_glass);
 
     let page = adw::PreferencesPage::new();
